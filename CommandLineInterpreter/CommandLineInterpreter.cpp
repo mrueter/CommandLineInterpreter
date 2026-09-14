@@ -1,4 +1,5 @@
 // CommandLineInterpreter.cpp : This file contains the 'main' function. Program execution begins and ends there.
+// Group: Group 1
 // Names: Baser Abrahim, Yuxuan(Jack) He, Michael Rueter, Bryant Hernandez, Huu Ngoc Nguyen
 // Course/Section: CPSC351 - Section 18102
 // Assignment: Programming Assignment 1 - myShell
