@@ -1,10 +1,13 @@
 // CommandLineInterpreter.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+// Names: baser Abrahim, Yuxuan Le, Michael Rueter
+// Course/Section: CPSC351
+// Assignment: Programming Assignment 1 - myShell
 
 #include <windows.h>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 #include <algorithm>
 #include <set>
 
@@ -13,13 +16,15 @@ const std::set<std::string> ALLOWED_COMMANDS = {
     "dir",
     "help",
     "vol",
-	"path",
-	"tasklist",
-	"notepad",
+    "path",
+    "tasklist",
+    "notepad",
     "echo",
-	"color",
+    "color",
     "ping"
 };
+
+const int MAX_ARGS = 4; // argv[0] through argv[3]
 
 // Structure to pass command string to the thread function
 struct ThreadData {
@@ -44,6 +49,19 @@ std::string trim(const std::string& str) {
     return str.substr(first, (last - first + 1));
 }
 
+// Splits the input line into up to MAX_ARGS tokens (argv[0]..argv[3]),
+// same idea as using strtok() in C.
+std::vector<std::string> parseCommand(const std::string& input) {
+    std::vector<std::string> argv;
+    std::istringstream stream(input);
+    std::string token;
+
+    while (argv.size() < MAX_ARGS && (stream >> token)) {
+        argv.push_back(token);
+    }
+    return argv;
+}
+
 int main() {
     std::string input;
 
@@ -58,7 +76,7 @@ int main() {
 
     while (true) {
         // Display prompt
-        std::cout << "myShell> ";
+        std::cout << "==> ";
 
         // Read full line of input
         if (!std::getline(std::cin, input)) {
@@ -72,16 +90,17 @@ int main() {
             continue;
         }
 
-        // Check for exit or quit
-        if (input == "exit" || input == "quit") {
-            std::cout << "Thanks for using myShell! Goodbye!\n";
+        // Parse into argv[0]..argv[3] (up to 4 tokens total)
+        std::vector<std::string> argv = parseCommand(input);
+
+        // Check for exit or quit (no thread created for these)
+        if (argv[0] == "exit" || argv[0] == "quit") {
+            std::cout << "Thanks for using myShell!\n";
             break;
         }
 
-        // Parse the base command (first token) to validate against allowed list
-        std::string baseCommand = input.substr(0, input.find(' '));
-
         // Convert base command to lowercase for case-insensitive check
+        std::string baseCommand = argv[0];
         std::transform(baseCommand.begin(), baseCommand.end(), baseCommand.begin(), ::tolower);
 
         if (ALLOWED_COMMANDS.find(baseCommand) == ALLOWED_COMMANDS.end()) {
@@ -89,9 +108,16 @@ int main() {
             continue;
         }
 
+        // Rebuild the parsed tokens (argv[0]..argv[3]) back into one string for system()
+        std::string commandLine;
+        for (size_t i = 0; i < argv.size(); i++) {
+            commandLine += argv[i];
+            if (i < argv.size() - 1) commandLine += " ";
+        }
+
         // Prepare data for the child thread
         ThreadData data;
-        strcpy_s(data.commandLine, input.c_str());
+        strcpy_s(data.commandLine, commandLine.c_str());
 
         // Create the child thread using CreateThread()
         HANDLE hThread = CreateThread(
